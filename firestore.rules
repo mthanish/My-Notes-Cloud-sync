@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if request is from an authenticated user
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the document path
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // User profile and settings
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+      
+      // User notes subcollection
+      match /notes/{noteId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // User tasks subcollection
+      match /tasks/{taskId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // User encrypted password vault subcollection
+      match /vault/{vaultId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+    
+    // Deny all other access by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
